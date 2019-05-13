@@ -32,19 +32,19 @@ class LFM(UserCF):
 		lens = len(self.train.keys())
 		for user,item in self.train.items():
 			num = len(item)
-			while num>0:
-				print("step=%d,rario = %f, num=%d"%(step,step/lens,num))
-				sample = set(np.random.choice(list(self.item_popularity.keys()),num,False,posibility))
-				original = set(self.train_data[user].keys())
-				new = sample - original
-				if num-len(new)>=0:
-					num -= len(new)
-					for item in new:
-						self.train_data[user][item] = 0
-				else:
-					for i in range(num):
-						self.train_data[user][new.pop()] = 0
-					break
+			sample = set(np.random.choice(list(self.item_popularity.keys()),3*num,False,posibility))
+			original = set(self.train_data[user].keys())
+			new = sample - original
+			if num-len(new)>=0:
+				for item in new:
+					self.train_data[user][item] = 0
+				lenss = len(new)
+			else:
+				for i in range(num):
+					self.train_data[user][new.pop()] = 0
+				lenss = num
+
+			print("step=%d,bili = %f, ratio=%d"%(step,step/lens,lens/num))
 			step+=1
 
 
