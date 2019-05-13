@@ -29,10 +29,12 @@ class LFM(UserCF):
 
 		#采样负样本
 		step=0
+		max_len = len(posibility)
 		lens = len(self.train.keys())
 		for user,item in self.train.items():
 			num = len(item)
-			sample = set(np.random.choice(list(self.item_popularity.keys()),3*num,False,posibility))
+			neg_num = min(max_len,3*num)
+			sample = set(np.random.choice(list(self.item_popularity.keys()),neg_num,False,posibility))
 			original = set(self.train_data[user].keys())
 			new = sample - original
 			if num-len(new)>=0:
@@ -44,7 +46,7 @@ class LFM(UserCF):
 					self.train_data[user][new.pop()] = 0
 				lenss = num
 
-			print("step=%d,bili = %f, ratio=%d"%(step,step/lens,lens/num))
+			print("step=%d,bili = %f, ratio=%d"%(step,step/lens,lenss/num))
 			step+=1
 
 
@@ -81,9 +83,9 @@ class LFM(UserCF):
 
 	def __initModel(self):
 		P = {}
-		Q = [{} for i in range(len(self.hid_cla))]
+		Q = [{} for i in range(self.hid_cla)]
 		for user in self.train_data.keys():
-			P[user] = np.random.random(len(self.hid_cla))
+			P[user] = np.random.random(self.hid_cla)
 
 		for items in self.train_data.values():
 			for item in items:
