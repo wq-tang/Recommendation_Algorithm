@@ -28,10 +28,13 @@ class LFM(UserCF):
 		posibility = np.array(list(self.item_popularity.values()))/sums
 
 		#采样负样本
+		step=0
+		lens = len(self.train.keys())
 		for user,item in self.train.items():
 			num = len(item)
 			while num>0:
-				sample = set(np.random.choice(list(self.item_popularity.keys()),num,True,posibility))
+				print("step=%d,rario = %f, num=%d"%(step,step/lens,num))
+				sample = set(np.random.choice(list(self.item_popularity.keys()),num,False,posibility))
 				original = set(self.train_data[user].keys())
 				new = sample - original
 				if num-len(new)>=0:
@@ -42,6 +45,7 @@ class LFM(UserCF):
 					for i in range(num):
 						self.train_data[user][new.pop()] = 0
 					break
+			step+=1
 
 
 	def __trainLFM(self):
@@ -129,6 +133,6 @@ class LFM(UserCF):
 		return prediction
 
 if __name__=='__main__':
-	lfm = LFM(filePath=r"ml-1m\moiveLens.csv",iter_num = 100,hid_cla=100,learning_rate=0.02,lambdas=0.01)
+	lfm = LFM(filePath=r"moiveLens.csv",iter_num = 100,hid_cla=100,learning_rate=0.02,lambdas=0.01)
 	lfm.calls(split_point=0)
 	prediction = lfm.call()
