@@ -158,6 +158,15 @@ class UserCF(object):
 		self.prediction = prediction
 		return self.prediction
 
+	def reverse_iu(self,dicts):
+		reverse_out = {}
+		for before,after in dicts.items():
+			for af in after:
+				if af not in reverse_out:
+					reverse_out[af] = [before]
+				else:
+					reverse_out[af].append(before)
+		return reverse_out
 
 	def call(self,split_point=0):
 		self.split_data(split_point)

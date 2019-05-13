@@ -53,48 +53,62 @@ class LFM(UserCF):
 	def __trainLFM(self):
 		for step in range(self.iter_num):
 			for user,items in self.train_data.items():
+				sigma = []
+				lengths = len(items)
 				for item , rui in items.items():
-					eui = rui - self.__predict(user,item)
-					for k in range(self.hid_cla):  #可以考虑多批次迭代的方法
-						self.P[user][k] += self.learning_rate*(eui*self.Q[k][item] - self.lambdas*self.P[user][k])
-						self.Q[k][item] += self.learning_rate*(eui*self.P[user][k] - self.lambdas*self.Q[k][item])
+					sigma.append(rui - np.dot(self.P[user],self.Q[item]))
+				sigma = np.array(sigma)/lengths
+
+				for k in range(self.hid_cla):
+					qk = []
+					for item in items.keys():
+						qk.append(self.Q[item][k])
+					qk=np.array(qk)
+					self.P[user][k] += self.learning_rate*(np.dot(qk,sigma) - self.lambdas*self.P[user][k])
+
+
+			for item,users in self.item_user:
+				sigma = []
+				lengths = len(users)
+				for user in users:
+					sigma.append(self.train_data[user][item] - np.dot(self.P[user],self.Q[item]))
+				sigma /= np.array(sigma)
+
+				for k in range(self.hid_cla):
+					pk = []
+					for u in users:
+						pk.append(self.P[u][k])
+					pk = np.array(pk)
+					self.Q[item][k] += self.learning_rate*(np.dot(pk,sigma) - self.lmbdas*self.Q[item][k])
+
 			self.learning_rate *= 0.9
 
-	def __predict(self,user,item):
-		pui = 0
-		for i in range(self.hid_cla):
-			pui += self.P[user][i]*self.Q[i][item]
-		return pui
 
 	def __recomend(self):
 		rank = {}
 		for user in self.test.keys():
 			local_rank={}
-			for i,pui in enumerate(self.Q[user]):
-				for k,pik in self.P[i].items():
-					if k not in local_rank:
-						local_rank[k] += pui*pik
-					else:
-						local_rank[k] = pui*pik
+			for item in self.item_user.keys():
+				local_rank[item] = np.dot(self.P[user],self.Q[item])
 			rank[user] = local_rank
 		self.rank = rank
 		return self.pick()
 
 
 	def __initModel(self):
-		P = {}
-		Q = [{} for i in range(self.hid_cla)]
-		for user in self.train_data.keys():
-			P[user] = np.random.random(self.hid_cla)
+		self.item_user = self.reverse_iu(self.train_data)
+		self.original_P = [np.random.random(self.hid_cla) for user in range(len(self.train_data))]
+		self.original_Q = [np.random.random(self.hid_cla) for user in range(len(self.item_user))]
+		
+		self.P = {}
+		self.Q = {}
+		for i,user in enumerate(self.train_data.keys()):
+			self.P[user] = self.original_P[i]
 
-		for items in self.train_data.values():
-			for item in items:
-				if item not in Q[0]:
-					for q in Q:
-						q[item] = np.random.random()
+		for i,item in enumerate(self.item_user.keys()):
+			self.Q[item] = self.original_Q[i]
 
-		self.P = P
-		self.Q = Q
+
 
 	
 	def __itemPopularity(self):

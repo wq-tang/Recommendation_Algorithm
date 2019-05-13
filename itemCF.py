@@ -10,7 +10,7 @@ class ItemCF(UserCF):
 
 	def itmeSimilarity(self):
 		user_item = self.train
-		item_user = self.__reverse_iu(self.train)
+		item_user = self.reverse_iu(self.train)
 		w = {u:{} for u in item_user.keys()}
 
 		log_dict = {}
@@ -65,15 +65,7 @@ class ItemCF(UserCF):
 		return self.pick(commend_num)
 
 
-	def __reverse_iu(self,dicts):
-		reverse_out = {}
-		for before,after in dicts.items():
-			for af in after:
-				if af not in reverse_out:
-					reverse_out[af] = [before]
-				else:
-					reverse_out[af].append(before)
-		return reverse_out
+
 
 
 if __name__=='__main__':
