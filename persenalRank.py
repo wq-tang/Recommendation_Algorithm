@@ -1,34 +1,59 @@
 import time
-def PersonalRank(G,alpha,root,max_depth):
-    rank=dict()
-    rank={x:0 for x in G.keys()}
-    rank[root]=1
-    #开始迭代
-    begin=time.time()
-    for k in range(max_depth):
-        tmp={x:0 for x in G.keys()}
-        #取出节点i和他的出边尾节点集合ri
-        for i,ri in G.items():
-            #取节点i的出边的尾节点j以及边E(i,j)的权重wij,边的权重都为1，归一化后就是1/len(ri)
-            for j,wij in ri.items():
-                tmp[j]+=alpha*rank[i]/(1.0*len(ri))
-        tmp[root]+=(1-alpha)
-        rank=tmp
-    end=time.time()
-    print ('use_time',end-begin)
-    lst=sorted(rank.items(),key=lambda x:x[1],reverse=True)
-    for ele in lst:
-        print("%s:%.3f, \t" %(ele[0],ele[1]))
- 
-    return rank
+import numpy as np
+import pandas as pd 
+from functools import reduce
+from operator import itemgetter
+from userCF import UserCF
+class PR(UserCF):
+    """docstring for PR"""
+    def __init__(self,alpha,max_depth,filePath=None,commend_num=10):
+        super().__init__(filePath=filePath,commend_num=commend_num)
+        self.alpha =alpha
+        self.max_depth = max_depth
+
+
+
+    def PersonalRank(self,root):
+        rank=dict()
+        rank={x:0 for x in self.G.keys()}
+        rank[root]=1
+        #开始迭代
+        begin=time.time()
+        for k in range(self.max_depth):
+            tmp={}
+            for user,items in self.train.items():
+                length = len(items)
+                for item in items:
+                    tmp[item]+=self.alpha*rank[user]/length
+            tmp[root]+=(1-self.alpha)
+            rank=tmp
+        end=time.time()
+        print ('use_time',end-begin)
+        lst=sorted(rank.items(),key=lambda x:x[1],reverse=True)
+        for ele in lst:
+            print("%s:%.3f, \t" %(ele[0],ele[1]))
+        return rank
+
+    def recommend(self):
+        rank = {}
+        self.item_user = self.reverse_iu(self.train)
+        for user in self.test.keys():
+            local_rank = self.PersonalRank(user)
+            rank[user] = self.__get(local_rank)
+        return self.pick()
+    def __get(self,local_rank):
+        ranks = {}
+        for item in self.item_user.keys():
+            ranks[item] = local_rank[item]
+        return ranks
+
+
 if __name__ == '__main__':
     alpha = 0.8
-    G = {'A' : {'a' : 1, 'c' : 1},
-    'B' : {'a' : 1, 'b' : 1, 'c':1, 'd':1}, 
-    'C' : {'c' : 1, 'd' : 1}, 
-    'a' : {'A' : 1, 'B' : 1}, 
-     'b' : {'B' : 1}, 
-     'c' : {'A' : 1, 'B' : 1, 'C':1},
-     'd' : {'B' : 1, 'C' : 1}}
-
-    PersonalRank(G,alpha, 'A', 100)
+    max_depth = 20
+    pr = PR(filePath=r"ml-1m\moiveLens.csv",alpha=alpha,max_depth=max_depth)
+    prediction=pr.recommend()
+    print("precision:",pr.precision(prediction))
+    print("recall:",pr.recall(prediction))
+    print("coverage:",pr.coverage(prediction))
+    print("popularity:",pr.popularity(prediction))

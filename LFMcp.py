@@ -50,7 +50,7 @@ class LFM(UserCF):
 			step+=1
 
 
-	def __trainLFM(self):
+	def __trainLFM2(self):
 		st = time.time()
 		for step in range(self.iter_num):
 			print("step = %d"%step)
@@ -85,6 +85,19 @@ class LFM(UserCF):
 
 			self.learning_rate *= 0.9
 
+	def __trainLFM(self):
+		st = time.time()
+		for step in range(self.iter_num):
+			print("step = %d"%step)
+			print(time.time()-st)
+			for user,items in self.train_data.items():
+				for item , rui in items.items():
+					eui = rui - self.__predict(user,item)
+					for k in range(self.hid_cla):  #可以考虑多批次迭代的方法
+						self.P[user][k] += self.learning_rate*(eui*self.Q[item][k] - self.lambdas*self.P[user][k])
+						self.Q[item][k] += self.learning_rate*(eui*self.P[user][k] - self.lambdas*self.Q[item][k])
+
+			self.learning_rate *= 0.9
 
 	def __recommend(self):
 		rank = {}
