@@ -51,7 +51,10 @@ class LFM(UserCF):
 
 
 	def __trainLFM(self):
+		st = time.time()
 		for step in range(self.iter_num):
+			print("step = %d"%step)
+			print(time.time()-st)
 			for user,items in self.train_data.items():
 				sigma = []
 				lengths = len(items)
@@ -66,8 +69,7 @@ class LFM(UserCF):
 					qk=np.array(qk)
 					self.P[user][k] += self.learning_rate*(np.dot(qk,sigma) - self.lambdas*self.P[user][k])
 
-
-			for item,users in self.item_user:
+			for item,users in self.item_user.items():
 				sigma = []
 				lengths = len(users)
 				for user in users:
@@ -79,12 +81,12 @@ class LFM(UserCF):
 					for u in users:
 						pk.append(self.P[u][k])
 					pk = np.array(pk)
-					self.Q[item][k] += self.learning_rate*(np.dot(pk,sigma) - self.lmbdas*self.Q[item][k])
+					self.Q[item][k] += self.learning_rate*(np.dot(pk,sigma) - self.lambdas*self.Q[item][k])
 
 			self.learning_rate *= 0.9
 
 
-	def __recomend(self):
+	def __recommend(self):
 		rank = {}
 		for user in self.test.keys():
 			local_rank={}
@@ -132,16 +134,12 @@ class LFM(UserCF):
 		self.__initModel()
 		t3= time.time()
 		print("init:",t3-t2)
+		self.__trainLFM()
 
 	def call(self):
-		t1 = time.time()
-		self.__trainLFM()
 		t2 = time.time()
-		print("train:",t2-t1)
-
 		prediction = self.__recommend()
 		print("recommend:",time.time()-t2)
-
 		print("precision:",self.precision(prediction))
 		print("recall:",self.recall(prediction))
 		print("coverage:",self.coverage(prediction))
