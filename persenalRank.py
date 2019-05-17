@@ -10,8 +10,8 @@ class PR(UserCF):
         super().__init__(filePath=filePath,commend_num=commend_num)
         self.alpha =alpha
         self.max_depth = max_depth
-
-
+        self.item_user = self.reverse_iu(self.train)
+        self.G = dict(self.train,**self.item_user)
 
     def PersonalRank(self,root):
         rank=dict()
@@ -20,33 +20,66 @@ class PR(UserCF):
         #开始迭代
         begin=time.time()
         for k in range(self.max_depth):
-            tmp={}
+            tmp= {x:0 for x in self.G.keys()}
             for user,items in self.train.items():
                 length = len(items)
                 for item in items:
                     tmp[item]+=self.alpha*rank[user]/length
-            tmp[root]+=(1-self.alpha)
+                    if item == root:
+                        tmp[root]+=(1-self.alpha)
             rank=tmp
         end=time.time()
-        print ('use_time',end-begin)
-        lst=sorted(rank.items(),key=lambda x:x[1],reverse=True)
-        for ele in lst:
-            print("%s:%.3f, \t" %(ele[0],ele[1]))
+        print ('use_time: ',end-begin)
         return rank
 
     def recommend(self):
-        rank = {}
-        self.item_user = self.reverse_iu(self.train)
+        self.rank = {}
         for user in self.test.keys():
             local_rank = self.PersonalRank(user)
-            rank[user] = self.__get(local_rank)
+            self.rank[user] = self.__get(local_rank)
         return self.pick()
     def __get(self,local_rank):
         ranks = {}
         for item in self.item_user.keys():
             ranks[item] = local_rank[item]
+        ranks=sorted(ranks.items(),key=lambda x:x[1],reverse=True)[:self.commend_num]
         return ranks
 
+    def matrix_method(self,root):
+        self.build_Matrix()
+        self.rank  = {}
+        for user in self.test.keys():
+            local_rank={}
+            start =time.time()
+            r0 = np.array([0 for i in self.G.keys()]) 
+            r0[self.search[root]] = 1
+            rt = np.array([1 for i in self.G.keys()])
+            rt /= np.sum(rt)
+            rt_1 = rt+1
+
+            while np.max(np.abs(rt-rt_1))<0.1**2:
+                rt_1 = self.alpha*np.dot(self.M,rt)+(1-self.alpha)*r0
+
+            for i,item in enumerate(self.item_user.keys()[len(self.train):]):
+                local_rank[item] = rt[i]
+
+            self.rank[user] = local_rank
+            print("use_time:",time.time()-start)
+        self.pick()
+
+    def build_Matrix(self):
+        search={}
+        user_num = len(self.train.keys())
+        M = np.array([[0 for i in range(len(self.G))] for i in range(len(self.G))])
+        for i,user in enumerate(self.G.keys()):
+            search[user] = i
+        for i,values in enumerate(self.G.values()):
+            for v in values:
+                M[i][search[v]] = 1
+        M = M/np.sum(M,0)
+        self.search =search
+        self.M = M
+        
 
 if __name__ == '__main__':
     alpha = 0.8
