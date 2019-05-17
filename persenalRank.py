@@ -8,6 +8,7 @@ class PR(UserCF):
     """docstring for PR"""
     def __init__(self,alpha,max_depth,filePath=None,commend_num=10):
         super().__init__(filePath=filePath,commend_num=commend_num)
+        self.split_data(0)
         self.alpha =alpha
         self.max_depth = max_depth
         self.item_user = self.reverse_iu(self.train)
