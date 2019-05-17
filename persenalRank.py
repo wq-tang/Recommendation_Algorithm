@@ -11,7 +11,7 @@ class PR(UserCF):
         self.split_data(0)
         self.alpha =alpha
         self.max_depth = max_depth
-        self.item_user = self.reverse_iu(self.train,"_item")
+        self.item_user = self.reverse_iu(self.train)
         self.G = dict(self.train,**self.item_user)
 
     def PersonalRank(self,root):

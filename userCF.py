@@ -158,14 +158,14 @@ class UserCF(object):
 		self.prediction = prediction
 		return self.prediction
 
-	def reverse_iu(self,dicts,appendix = ""):
+	def reverse_iu(self,dicts):
 		reverse_out = {}
 		for before,after in dicts.items():
 			for af in after:
 				if af not in reverse_out:
-					reverse_out[af+appendix] = [before]
+					reverse_out[str(af)] = [before]
 				else:
-					reverse_out[af+appendix].append(before)
+					reverse_out[str(af)].append(before)
 		return reverse_out
 
 	def call(self,split_point=0):
